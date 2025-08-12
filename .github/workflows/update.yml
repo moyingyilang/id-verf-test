@@ -1,0 +1,42 @@
+name: Secure Whitelist Update
+
+on:
+  push:
+    paths:
+      - 'whitelist.txt'
+  workflow_dispatch:
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: pip install cryptography
+      
+    - name: Generate secure files
+      run: python generate_keys.py
+      env:
+        SECURE_PASSWORD: ${{ secrets.SECURE_PASSWORD }}
+      
+    - name: Upload secure files
+      uses: actions/upload-artifact@v3
+      with:
+        name: secure-files
+        path: secure_files/*
+        retention-days: 1
+        
+    - name: Commit and push changes
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add secure_files/
+        git commit -m "Automated update: new security files [$(date +%Y%m%d-%H%M%S)]"
+        git push
